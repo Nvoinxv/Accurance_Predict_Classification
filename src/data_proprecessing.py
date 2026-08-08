@@ -104,3 +104,34 @@ X_encoded_df = pd.DataFrame(
 )
 
 print(X_encoded_df.head())
+
+encoder = LabelEncoder()
+
+y_encode = pd.Series(
+    encoder.fit_transform(y),
+    index=y.index,
+    name=y.name
+)
+
+print("Hasil label encoding pada target:", y_encode.head(5))
+
+# Membuat plot untuk mengecek distribusi pada target agar seimbang
+counts = y_encode.value_counts().sort_index()
+labels = counts.index.astype(str)  # Label = nilai unik y_encode
+
+# Sesuaikan explode dengan jumlah kategori sebenarnya
+n_categories = len(counts)
+explode = [0.05] + [0] * (n_categories - 1)  # Otomatis sesuai panjang
+
+plt.figure(figsize=(5, 5))
+
+plt.pie(
+    counts,              # Data jumlah per kategori
+    labels=labels,       # Label kategori
+    autopct='%1.1f%%',
+    startangle=90,
+    explode=explode
+)
+
+plt.title('Distribusi Claim Status', fontsize=16)
+plt.show()
