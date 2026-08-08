@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import chi2_contingency
@@ -85,3 +85,22 @@ for col in categorical_cols:
 
 # Mengecek sample data pada features
 print("Sample data pada X", X.head(5))
+
+# Melakukan preprocessing pada data features terutama string
+categorical_features = X.select_dtypes(include=["object"]).columns
+
+encoder = OneHotEncoder(
+    handle_unknown="ignore"
+)
+
+X_encoded = encoder.fit_transform(
+    X[categorical_features]
+)
+
+X_encoded_df = pd.DataFrame(
+    X_encoded.toarray(),
+    columns=encoder.get_feature_names_out(categorical_features),
+    index=X.index
+)
+
+print(X_encoded_df.head())
