@@ -82,3 +82,6 @@ for col in categorical_cols:
     print(f"Chi-square : {chi2:.4f}")
     print(f"p-value    : {p_value:.6f}")
     print("-" * 40)
+
+# Mengecek sample data pada features
+print("Sample data pada X", X.head(5))
