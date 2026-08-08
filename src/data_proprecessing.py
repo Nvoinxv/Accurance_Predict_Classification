@@ -45,6 +45,52 @@ X = dataset_insurance_claims.drop(
 
 y = dataset_insurance_claims[target]
 
+# Melakukan plot untuk mengecek outlier
+numeric_cols = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
+
+n_cols = 3                          # Jumlah plot per baris
+n_rows = int(np.ceil(len(numeric_cols) / n_cols))  # Hitung baris otomatis
+
+# Ukuran figure: lebar cukup, tinggi proporsional
+plt.figure(figsize=(16, 4.5 * n_rows))
+
+# Warna custom: isi kuning, garis hitam
+boxprops = dict(facecolor='#FFD700', edgecolor='black', linewidth=1.5)  # Kuning emas
+medianprops = dict(color='black', linewidth=2)
+whiskerprops = dict(color='black', linewidth=1.5)
+capprops = dict(color='black', linewidth=1.5)
+flierprops = dict(marker='o', markerfacecolor='black', markersize=5, alpha=0.6)
+
+for i, col in enumerate(numeric_cols, 1):
+    ax = plt.subplot(n_rows, n_cols, i)
+    
+    sns.boxplot(
+        x=X[col],
+        ax=ax,
+        width=0.5,
+        boxprops=boxprops,
+        medianprops=medianprops,
+        whiskerprops=whiskerprops,
+        capprops=capprops,
+        flierprops=flierprops
+    )
+    
+    ax.set_title(f'{col}', fontsize=11, fontweight='bold', color='black')
+    ax.set_xlabel('')  # Hilangkan label x biar rapi
+    ax.tick_params(axis='x', labelsize=9, colors='black')
+    ax.set_facecolor('white')  # Background putih
+    
+    # Hapus grid biar bersih
+    ax.grid(False)
+
+# Spacing antar plot lebih longgar
+plt.subplots_adjust(hspace=0.6, wspace=0.3)
+plt.suptitle('Boxplot Outlier Detection — Numeric Features', 
+             fontsize=16, fontweight='bold', color='black', y=1.02)
+
+plt.tight_layout()
+plt.show()
+
 # Mengecek korelasi pada data numerik
 numeric_cols = dataset_insurance_claims.select_dtypes(
     include=["int64", "float64"]
