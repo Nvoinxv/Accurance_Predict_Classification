@@ -91,6 +91,34 @@ plt.suptitle('Boxplot Outlier Detection — Numeric Features',
 plt.tight_layout()
 plt.show()
 
+# Membuat fungsi untuk menghapus outlier
+def remove_outliers_iqr(df, columns, factor=1.5):
+    """
+    Hapus baris yang mengandung outlier di kolom numerik tertentu.
+    Kolom kategorikal tetap dipertahankan.
+    """
+    mask = np.ones(len(df), dtype=bool)
+    
+    for col in columns:
+        arr = df[col].to_numpy()
+        q1 = np.percentile(arr, 25)
+        q3 = np.percentile(arr, 75)
+        iqr = q3 - q1
+        lower = q1 - factor * iqr
+        upper = q3 + factor * iqr
+        
+        col_mask = (arr >= lower) & (arr <= upper)
+        mask &= col_mask
+        
+        n_outliers = (~col_mask).sum()
+        print(f"  {col}: Q1={q1:.2f}, Q3={q3:.2f}, Outlier={n_outliers}")
+    
+    print(f"\n✅ Shape: {df.shape} → {df[mask].shape}")
+    return df[mask].reset_index(drop=True)
+
+numeric_cols = X.select_dtypes(include=["float64", "int64"]).columns.tolist()
+X = remove_outliers_iqr(X, numeric_cols, factor=1.5)
+
 # Mengecek korelasi pada data numerik
 numeric_cols = dataset_insurance_claims.select_dtypes(
     include=["int64", "float64"]
