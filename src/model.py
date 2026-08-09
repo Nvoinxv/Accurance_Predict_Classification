@@ -1,13 +1,17 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class NeuralNetworkClassification(nn.Module):
-    def __init__(self, input_size, hidden_size=512, num_classes=2, dropout_rate=0.1):
-        super(NeuralNetworkClassification, self).__init__()
+    def __init__(self, input_size, hidden_size=512, num_classes=2, dropout_rate=0.15):
+        super().__init__()
 
         self.net = nn.Sequential(
             nn.Linear(input_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(dropout_rate),
+
+            nn.Linear(hidden_size, hidden_size),
             nn.BatchNorm1d(hidden_size),
             nn.LeakyReLU(0.1),
             nn.Dropout(dropout_rate),
@@ -22,12 +26,7 @@ class NeuralNetworkClassification(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Dropout(dropout_rate),
 
-            nn.Linear(hidden_size // 4, hidden_size // 8),
-            nn.BatchNorm1d(hidden_size // 8),
-            nn.LeakyReLU(0.1),
-            nn.Dropout(dropout_rate),
-
-            nn.Linear(hidden_size // 8, num_classes)
+            nn.Linear(hidden_size // 4, num_classes)
         )
 
         self._init_weights()
@@ -43,7 +42,7 @@ class NeuralNetworkClassification(nn.Module):
 
     def forward(self, x):
         return self.net(x)
-
+    
 model = NeuralNetworkClassification(input_size=10, hidden_size=64, num_classes=2)
 print("=" * 50)
 print("DAFTAR PARAMETER MODEL")
