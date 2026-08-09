@@ -3,25 +3,27 @@ from data_proprecessing import InsuranceClaimPreprocessor
 from torch.utils.data import DataLoader, TensorDataset
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
+import torch
 
 processor = InsuranceClaimPreprocessor(
     data_path="/home/nvoinxv/Documents/Classification_Predict_Accurance_Model/Data/Insurance claims data.csv"
 )
 
-x, y = processor.run()
-x, y = TensorDataset(x, y)
-x, y = DataLoader(x, y, batch_size=10, shuffle=True)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = processor.run_full_pipeline(
+    test_size=0.2, balance_method="smote"
+)
+
+# Langsung konversi ke tensor
+X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32)
+y_train_tensor = torch.tensor(y_train.values, dtype=torch.long)
+X_test_tensor  = torch.tensor(X_test.values, dtype=torch.float32)
+y_test_tensor  = torch.tensor(y_test.values, dtype=torch.long)
+
+train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
 print("=" * 50)
-print("Bebebrapa sample data X_train dan X_test")
-print(f"X_train: {x_train.head(5)}")
-print(f"X_test: {x_test.head(5)}")
-print("=" * 50)
-
-print("=" * 50)
-print("Bebebrapa sample data y_train dan y_test")
-print(f"y_train: {y_train.head(5)}")
-print(f"y_test: {y_test.head(5)}")
+print("Bebebrapa sample data train_loader")
+print(f"X_train: {train_loader.head(5)}")
 print("=" * 50)
 
