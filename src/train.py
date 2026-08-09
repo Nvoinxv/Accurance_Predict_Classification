@@ -24,6 +24,14 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
 print("=" * 50)
 print("Bebebrapa sample data train_loader")
-print(f"X_train: {train_loader.head(5)}")
-print("=" * 50)
 
+# Get the first batch
+for batch_idx, (inputs, labels) in enumerate(train_loader):
+    print(f"Batch {batch_idx}:")
+    print(f"  Inputs shape: {inputs.shape}")
+    print(f"  Labels shape: {labels.shape}")
+    print(f"  First 5 inputs:\n{inputs[:5]}")
+    print(f"  First 5 labels: {labels[:5]}")
+    break  # Only show the first batch
+
+print("=" * 50)
