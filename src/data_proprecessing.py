@@ -1,10 +1,11 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from scipy.stats import chi2_contingency
+import seaborn as sns
 
 
 class InsuranceClaimPreprocessor:
@@ -37,6 +38,12 @@ class InsuranceClaimPreprocessor:
         self.scaler = StandardScaler()
         self.ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
         self.le = LabelEncoder()
+
+        self.X_train = None
+        self.X_test = None
+        self.y_train = None
+        self.y_test = None
+        self.class_weights = None
 
     def load_data(self):
         self.df = pd.read_csv(self.data_path)
@@ -145,20 +152,86 @@ class InsuranceClaimPreprocessor:
         )
         return self
 
-    def plot_target_distribution(self):
+    def plot_target_distribution(self, title="Distribusi Claim Status"):
         counts = self.y.value_counts().sort_index()
         explode = [0.05] + [0] * (len(counts) - 1)
         plt.figure(figsize=(5, 5))
         plt.pie(counts, labels=counts.index.astype(str), autopct="%1.1f%%",
                 startangle=90, explode=explode)
-        plt.title("Distribusi Claim Status", fontsize=16)
+        plt.title(title, fontsize=16)
         plt.show()
         return self
+
+    def split_train_test(self, test_size=0.2, random_state=42):
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+            self.X, self.y,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=self.y
+        )
+        print(f"Split: train={self.X_train.shape}, test={self.X_test.shape}")
+        return self
+
+    def compute_class_weights(self):
+        classes = np.unique(self.y_train)
+        total = len(self.y_train)
+        weights = {}
+        for c in classes:
+            count = np.sum(self.y_train == c)
+            weights[c] = total / (len(classes) * count)
+        self.class_weights = weights
+        print(f"Class weights: {weights}")
+        return self
+
+    def balance_training_set(self, method="smote"):
+        try:
+            from imblearn.over_sampling import SMOTE, RandomOverSampler
+        except ImportError:
+            raise ImportError("Install imblearn: pip install imbalanced-learn")
+
+        if self.X_train is None:
+            raise RuntimeError("Panggil split_train_test() dulu sebelum balancing!")
+
+        print(f"\nBefore balance: {pd.Series(self.y_train).value_counts().to_dict()}")
+
+        if method == "smote":
+            sampler = SMOTE(random_state=42)
+        elif method == "random":
+            sampler = RandomOverSampler(random_state=42)
+        else:
+            raise ValueError("method harus 'smote' atau 'random'")
+
+        self.X_train, self.y_train = sampler.fit_resample(self.X_train, self.y_train)
+
+        print(f"After balance:  {pd.Series(self.y_train).value_counts().to_dict()}")
+        return self
+
+    def plot_comparison(self):
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+        counts_before = self.y.value_counts().sort_index()
+        counts_after = pd.Series(self.y_train).value_counts().sort_index()
+
+        colors = ["#FFD700", "#000000"]
+
+        axes[0].bar(counts_before.index.astype(str), counts_before.values, color=colors[:len(counts_before)])
+        axes[0].set_title("Sebelum Balance (Full Data)")
+        axes[0].set_ylabel("Jumlah")
+
+        axes[1].bar(counts_after.index.astype(str), counts_after.values, color=colors[:len(counts_after)])
+        axes[1].set_title("Sesudah Balance (Train Set)")
+
+        plt.tight_layout()
+        plt.show()
+        return self
+
+    def get_train_test_data(self):
+        return self.X_train, self.X_test, self.y_train, self.y_test
 
     def get_data(self):
         return self.X, self.y
 
-    def run(self):
+    def run_preprocessing(self):
         return (
             self.load_data()
             .drop_features()
@@ -170,14 +243,26 @@ class InsuranceClaimPreprocessor:
             .encode_categorical()
             .encode_target()
             .plot_target_distribution()
-            .get_data()
         )
+
+    def run_full_pipeline(self, test_size=0.2, balance_method="smote"):
+        self.run_preprocessing()
+        self.split_train_test(test_size=test_size)
+        self.compute_class_weights()
+        self.balance_training_set(method=balance_method)
+        self.plot_comparison()
+        return self.get_train_test_data()
 
 
 if __name__ == "__main__":
-    preprocessor = InsuranceClaimPreprocessor(
+    prep = InsuranceClaimPreprocessor(
         data_path="/home/nvoinxv/Documents/Classification_Predict_Accurance_Model/Data/Insurance claims data.csv"
     )
-    X_processed, y_encoded = preprocessor.run()
-    print(f"\nFinal shape: X={X_processed.shape}, y={y_encoded.shape}")
-    print(X_processed.head())
+
+    X_train, X_test, y_train, y_test = prep.run_full_pipeline(
+        test_size=0.2,
+        balance_method="smote"
+    )
+
+    print(f"\nFinal: X_train={X_train.shape}, X_test={X_test.shape}")
+    print(f"Class weights: {prep.class_weights}")
